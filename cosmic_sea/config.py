@@ -29,3 +29,7 @@ class SecurityConfig:
     clock_drift_max_ms: int = 2200
     visibility_window_ticks: int = 12
     visibility_gap_ticks: int = 4
+
+    ai_warmup_samples: int = 12
+    ai_history_size: int = 80
+    ai_anomaly_threshold: float = 0.72

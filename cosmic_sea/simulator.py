@@ -7,6 +7,7 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from .anomaly_ai import AIAnomalyDetector
 from .config import SecurityConfig
 from .models import Event, MessagePacket
 from .nodes import GroundStation, SatelliteNode
@@ -20,6 +21,7 @@ class CosmicSeaSimulator:
         self.keys = KeyRegistry(self.config)
         self.security = ZeroTrustSecurityLayer(self.keys, self.config)
         self.trust = TrustEngine(self.config)
+        self.ai = AIAnomalyDetector(self.config)
 
         self.ground_stations = [GroundStation("GROUND-ALPHA"), GroundStation("GROUND-BETA")]
         self.active_ground_idx = 0
@@ -47,11 +49,13 @@ class CosmicSeaSimulator:
         for gs in self.ground_stations:
             self.keys.register_identity(gs.station_id)
             self.trust.ensure_identity(gs.station_id, role=gs.role)
+            self.ai.ensure_identity(gs.station_id)
             self._clock_offsets_ms[gs.station_id] = random.randint(-250, 250)
 
         for sat in self.satellites:
             self.keys.register_identity(sat.satellite_id)
             self.trust.ensure_identity(sat.satellite_id, role=sat.role)
+            self.ai.ensure_identity(sat.satellite_id)
             self._clock_offsets_ms[sat.satellite_id] = random.randint(
                 -self.config.clock_drift_max_ms,
                 self.config.clock_drift_max_ms,
@@ -81,6 +85,7 @@ class CosmicSeaSimulator:
                     "trust": trust_data[sat.satellite_id]["score"],
                     "stage": trust_data[sat.satellite_id]["stage"],
                     "isolated": trust_data[sat.satellite_id]["isolated"],
+                    "ai_risk": self.ai.risk_score(sat.satellite_id),
                 }
                 for sat in self.satellites
             ]
@@ -193,6 +198,7 @@ class CosmicSeaSimulator:
     def _process_packet(self, packet: MessagePacket, declared_payload_type: str) -> None:
         if not self.trust.has_identity(packet.sender_id):
             self.trust.ensure_identity(packet.sender_id, role="external")
+            self.ai.ensure_identity(packet.sender_id)
 
         if self._is_isolated(packet.sender_id):
             self._events.append(Event(level="critical", message=f"Blocked packet from isolated {packet.sender_id}"))
@@ -217,6 +223,33 @@ class CosmicSeaSimulator:
                 self.trust.apply_violation(packet.sender_id, "telemetry_origin_violation", severity="minor", confidence=0.62)
             else:
                 self.trust.mark_good(packet.sender_id)
+
+            ai_out = self.ai.observe(
+                identity=packet.sender_id,
+                role=role,
+                receiver_id=packet.receiver_id,
+                payload_type=payload_type,
+                battery=payload.get("battery"),
+                temp_c=payload.get("temp_c"),
+                timestamp=packet.timestamp,
+            )
+            if ai_out.is_anomaly:
+                severity = "major" if ai_out.confidence >= 0.85 else "minor"
+                self.trust.apply_violation(
+                    packet.sender_id,
+                    f"ai_anomaly(score={ai_out.score:.2f})",
+                    severity=severity,
+                    confidence=ai_out.confidence,
+                )
+                self._events.append(
+                    Event(
+                        level="critical" if severity == "major" else "warning",
+                        message=(
+                            f"AI anomaly detected for {packet.sender_id}: "
+                            f"confidence={ai_out.confidence:.2f}, score={ai_out.score:.2f}"
+                        ),
+                    )
+                )
 
             limit = self.config.ground_freq_limit if role == "ground_station" else self.config.satellite_freq_limit
             abnormal, confidence = self.security.detect_abnormal_frequency(packet.sender_id, limit=limit)

@@ -123,6 +123,7 @@
           card.innerHTML = `
             <div><strong>${sat.id}</strong></div>
             <div class="score">Trust ${sat.trust.toFixed(2)}</div>
+            <div class="meta">AI Risk ${sat.ai_risk.toFixed(3)}</div>
             <div class="${statusClass}">${statusLabel}</div>
             <div class="meta">Zero Trust: signature + HMAC + timestamp/nonce + AES + key epochs</div>
           `;

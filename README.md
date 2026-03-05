@@ -52,6 +52,7 @@ Cosmic Sea is a simulation-based Zero Trust security framework for satellite com
 - Role-aware scoring (`satellite`, `ground_station`, `external`).
 - Explainable violations with confidence score in alerts.
 - Frequency baselines split by role.
+- AI anomaly detector (unsupervised online model) over per-node behavioral features.
 - Staged policy actions:
   - `monitor`: increased scrutiny.
   - `throttle`: probabilistic transmission drop.
@@ -62,6 +63,19 @@ Cosmic Sea is a simulation-based Zero Trust security framework for satellite com
 - Command injection.
 - Replay attack.
 - Satellite impersonation.
+
+## AI Anomaly Detection
+- `cosmic_sea/anomaly_ai.py` adds a per-identity online anomaly model.
+- Features used per packet include:
+  - role indicators
+  - payload type (`telemetry` vs `command`)
+  - receiver class (ground/satellite)
+  - telemetry battery and temperature (when present)
+  - inter-packet timing delta
+- The detector computes multivariate z-score deviation from each node's baseline and outputs:
+  - anomaly score
+  - anomaly confidence (`0..1`)
+- High-confidence anomalies automatically reduce trust and can trigger quarantine/isolation.
 
 ## Project structure
 - `app.py` - Flask entrypoint and API routes.
