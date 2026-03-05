@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cosmic Sea Mission Control</title>
+    <style>
+      :root {
+        --bg: #081122;
+        --panel: #11213d;
+        --panel-2: #182c4d;
+        --text: #f0f5ff;
+        --ok: #68d391;
+        --warn: #f6ad55;
+        --bad: #fc8181;
+        --accent: #6ee7ff;
+      }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text);
+        background: radial-gradient(circle at top, #16315e 0%, var(--bg) 52%);
+      }
+      .layout {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        letter-spacing: 1px;
+      }
+      .sub {
+        color: #b5c7ea;
+        margin-bottom: 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 12px;
+      }
+      .card {
+        background: linear-gradient(160deg, var(--panel), var(--panel-2));
+        border: 1px solid #294872;
+        border-radius: 10px;
+        padding: 12px;
+      }
+      .score {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .isolated {
+        color: var(--bad);
+        font-weight: 700;
+      }
+      .healthy {
+        color: var(--ok);
+        font-weight: 700;
+      }
+      .meta {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #b9caea;
+      }
+      .section-title {
+        margin: 16px 0 8px;
+        color: var(--accent);
+      }
+      .list {
+        background: #0d1c35;
+        border: 1px solid #27466f;
+        border-radius: 10px;
+        padding: 10px;
+        min-height: 84px;
+      }
+      .alert {
+        border-left: 3px solid var(--warn);
+        padding: 6px 8px;
+        margin-bottom: 6px;
+        background: #102445;
+        font-size: 13px;
+      }
+      .alert.critical {
+        border-color: var(--bad);
+      }
+      @media (max-width: 640px) {
+        h1 {
+          font-size: 22px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <h1>COSMIC SEA - Mission Control</h1>
+      <div class="sub" id="timestamp">Loading...</div>
+
+      <div class="section-title">Satellite Trust Mesh</div>
+      <div class="grid" id="satellite-grid"></div>
+
+      <div class="section-title">Blocked Devices</div>
+      <div class="list" id="blocked-list">None</div>
+
+      <div class="section-title">Alerts</div>
+      <div class="list" id="alerts-list"></div>
+    </div>
+
+    <script>
+      async function render() {
+        const response = await fetch('/api/state');
+        const state = await response.json();
+
+        document.getElementById('timestamp').textContent =
+          `Ground Station: ${state.ground_station} | UTC: ${state.time}`;
+
+        const grid = document.getElementById('satellite-grid');
+        grid.innerHTML = '';
+        state.satellites.forEach((sat) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          const statusClass = sat.isolated ? 'isolated' : 'healthy';
+          const statusLabel = sat.isolated ? 'Isolated' : 'Active';
+          card.innerHTML = `
+            <div><strong>${sat.id}</strong></div>
+            <div class="score">Trust ${sat.trust.toFixed(2)}</div>
+            <div class="${statusClass}">${statusLabel}</div>
+            <div class="meta">Zero Trust verification: signature + HMAC + nonce/timestamp + AES</div>
+          `;
+          grid.appendChild(card);
+        });
+
+        const blocked = document.getElementById('blocked-list');
+        blocked.textContent = state.blocked.length ? state.blocked.join(', ') : 'None';
+
+        const alerts = document.getElementById('alerts-list');
+        alerts.innerHTML = '';
+        const items = state.alerts.slice(0, 12);
+        if (!items.length) {
+          alerts.textContent = 'No active alerts';
+        } else {
+          items.forEach((item) => {
+            const div = document.createElement('div');
+            div.className = `alert ${item.level === 'critical' ? 'critical' : ''}`;
+            div.textContent = `${item.timestamp} | ${item.level.toUpperCase()} | ${item.message}`;
+            alerts.appendChild(div);
+          });
+        }
+      }
+
+      render();
+      setInterval(render, 1200);
+    </script>
+  </body>
+</html>
