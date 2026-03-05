@@ -101,17 +101,21 @@
       <div class="section-title">Blocked Devices</div>
       <div class="list" id="blocked-list">None</div>
 
+      <div class="section-title">Autonomous Defense KPIs</div>
+      <div class="list" id="kpi-list">Loading...</div>
+
       <div class="section-title">Alerts</div>
       <div class="list" id="alerts-list"></div>
     </div>
 
     <script>
-      async function render() {
-        const response = await fetch('/api/state');
-        const state = await response.json();
+      const API_BASE = window.COSMIC_API_BASE || '';
+
+      function renderState(state) {
+        if (!state) return;
 
         document.getElementById('timestamp').textContent =
-          `Active Ground Station: ${state.active_ground_station} | All Stations: ${state.ground_stations.join(', ')} | UTC: ${state.time}`;
+          `Mode: ${state.mode || 'simulation'} | Active Ground Station: ${state.active_ground_station} | All Stations: ${state.ground_stations.join(', ')} | UTC: ${state.time}`;
 
         const grid = document.getElementById('satellite-grid');
         grid.innerHTML = '';
@@ -133,6 +137,11 @@
         const blocked = document.getElementById('blocked-list');
         blocked.textContent = state.blocked.length ? state.blocked.join(', ') : 'None';
 
+        const kpi = state.defense_kpis || {};
+        const kpiList = document.getElementById('kpi-list');
+        kpiList.textContent =
+          `Incidents=${kpi.total_incidents ?? 0} | Active=${kpi.active_incidents ?? 0} | ContainmentRate=${((kpi.containment_rate ?? 0) * 100).toFixed(1)}% | MTTD=${(kpi.mttd_seconds ?? 0).toFixed(3)}s | MTTC=${(kpi.mttc_seconds ?? 0).toFixed(3)}s | MTTR=${(kpi.mttr_seconds ?? 0).toFixed(3)}s`;
+
         const alerts = document.getElementById('alerts-list');
         alerts.innerHTML = '';
         const items = state.alerts.slice(0, 12);
@@ -148,8 +157,27 @@
         }
       }
 
-      render();
-      setInterval(render, 1200);
+      async function pollFallback() {
+        const response = await fetch(`${API_BASE}/api/state`);
+        const state = await response.json();
+        renderState(state);
+      }
+
+      function startSSE() {
+        const stream = new EventSource(`${API_BASE}/api/stream`);
+        stream.onmessage = (evt) => {
+          try {
+            renderState(JSON.parse(evt.data));
+          } catch (_) {}
+        };
+        stream.onerror = () => {
+          stream.close();
+          setInterval(pollFallback, 1500);
+        };
+      }
+
+      startSSE();
+      pollFallback();
     </script>
   </body>
 </html>

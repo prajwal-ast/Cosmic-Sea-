@@ -59,6 +59,19 @@ Cosmic Sea is a simulation-based Zero Trust security framework for satellite com
   - `quarantine`: telemetry-only transmissions.
   - `isolate`: node blocked and identity revoked.
 
+## 6. Autonomous Cyber Defense System
+- `cosmic_sea/defense_policy.py` implements an autonomous detect-decide-respond controller.
+- Violations are ingested as incidents and auto-mapped to defense actions by trust stage:
+  - `monitor` -> raise observation level
+  - `throttle` -> adaptive rate limiting
+  - `quarantine` -> command channel lockdown
+  - `isolated` -> full isolation + identity revocation
+- Closed-loop KPIs are computed live:
+  - `MTTD` (mean time to defensive action)
+  - `MTTC` (mean time to containment)
+  - `MTTR` (mean time to incident resolution)
+  - containment rate and action counters
+
 ## Attack Simulation
 - Command injection.
 - Replay attack.
@@ -82,6 +95,7 @@ Cosmic Sea is a simulation-based Zero Trust security framework for satellite com
 - `cosmic_sea/security.py` - cryptography and key lifecycle.
 - `cosmic_sea/trust.py` - mission-aware trust scoring and staged response.
 - `cosmic_sea/simulator.py` - satellite/ground network + attack simulation + impairments.
+- `cosmic_sea/defense_policy.py` - autonomous cyber defense decision engine.
 - `templates/index.html` - mission control dashboard.
 
 ## Run
@@ -94,6 +108,65 @@ python app.py
 ```
 
 Open `http://127.0.0.1:5000`.
+
+## Deployment (Railway Recommended)
+### 1) Deploy API service
+- Use this repo as Railway service source.
+- Set env vars:
+  - `SERVICE_ROLE=api`
+  - `SIM_MODE=false` for external ingest mode (or `true` for built-in simulation mode)
+  - `INGEST_TOKEN=<strong-random-token>`
+  - `CORS_ORIGIN=*` (or your Vercel domain)
+- Railway will use `Dockerfile` + `start.sh`.
+
+### 2) Deploy worker service (same repo, second service)
+- Create another Railway service from the same repo.
+- Set env vars:
+  - `SERVICE_ROLE=worker`
+  - `API_BASE_URL=https://<your-api-domain>`
+  - `INGEST_TOKEN=<same-token-as-api>`
+  - `SATELLITE_IDS=SAT-01,SAT-02,SAT-03,SAT-04,SAT-05,SAT-06`
+  - `WORKER_PUSH_INTERVAL=1.0`
+- This worker posts external telemetry/command events to `POST /api/ingest`.
+
+### 3) Real-time dashboard
+- Dashboard reads real-time state from:
+  - `GET /api/state`
+  - `GET /api/stream` (SSE, real-time push)
+
+## Optional Vercel Frontend
+- You can host only the frontend on Vercel and point it to Railway API.
+- Before loading dashboard, set:
+  - `window.COSMIC_API_BASE = \"https://<railway-api-domain>\"`
+- API CORS must allow your Vercel domain (`CORS_ORIGIN`).
+
+## Ingest API
+- Endpoint: `POST /api/ingest`
+- Auth: `Authorization: Bearer <INGEST_TOKEN>` or header `X-Ingest-Token`.
+
+### Telemetry payload
+```json
+{
+  "kind": "telemetry",
+  "satellite_id": "SAT-01",
+  "battery": 88.5,
+  "temp_c": 21.7
+}
+```
+
+### Command payload
+```json
+{
+  "kind": "command",
+  "satellite_id": "SAT-01",
+  "command": "ADJUST_ORBIT",
+  "delta": 1
+}
+```
+
+## Real Satellite Data Adapter Path
+- Replace `worker.py` stub generator with your real feed client (ground-station bridge, MQTT, Kafka, SDR decoder, provider API).
+- Keep the output contract as `POST /api/ingest` so the Zero Trust and autonomous defense pipeline remains unchanged.
 
 ## Disclaimer
 This is a cybersecurity simulation prototype for research/demo use, not flight-certified mission software.

@@ -9,6 +9,7 @@ from typing import Any
 
 from .anomaly_ai import AIAnomalyDetector
 from .config import SecurityConfig
+from .defense_policy import AutonomousDefenseSystem
 from .models import Event, MessagePacket
 from .nodes import GroundStation, SatelliteNode
 from .security import KeyRegistry, ZeroTrustSecurityLayer
@@ -16,7 +17,7 @@ from .trust import TrustEngine
 
 
 class CosmicSeaSimulator:
-    def __init__(self, num_satellites: int = 5, tick_interval: float = 1.0) -> None:
+    def __init__(self, num_satellites: int = 5, tick_interval: float = 1.0, auto_simulation: bool = True) -> None:
         self.config = SecurityConfig()
         self.keys = KeyRegistry(self.config)
         self.security = ZeroTrustSecurityLayer(self.keys, self.config)
@@ -27,9 +28,11 @@ class CosmicSeaSimulator:
         self.active_ground_idx = 0
         self.satellites = [SatelliteNode(f"SAT-{i+1:02d}") for i in range(num_satellites)]
         self.tick_interval = tick_interval
+        self.auto_simulation = auto_simulation
 
         self._events: list[Event] = []
         self._blocked: set[str] = set()
+        self.defense = AutonomousDefenseSystem(self.config, self.trust, self.keys, self._blocked)
         self._captured_packet: MessagePacket | None = None
         self._clock_offsets_ms: dict[str, int] = {}
         self._in_flight: list[tuple[float, MessagePacket, str]] = []
@@ -50,12 +53,14 @@ class CosmicSeaSimulator:
             self.keys.register_identity(gs.station_id)
             self.trust.ensure_identity(gs.station_id, role=gs.role)
             self.ai.ensure_identity(gs.station_id)
+            self.defense.ensure_identity(gs.station_id)
             self._clock_offsets_ms[gs.station_id] = random.randint(-250, 250)
 
         for sat in self.satellites:
             self.keys.register_identity(sat.satellite_id)
             self.trust.ensure_identity(sat.satellite_id, role=sat.role)
             self.ai.ensure_identity(sat.satellite_id)
+            self.defense.ensure_identity(sat.satellite_id)
             self._clock_offsets_ms[sat.satellite_id] = random.randint(
                 -self.config.clock_drift_max_ms,
                 self.config.clock_drift_max_ms,
@@ -64,6 +69,8 @@ class CosmicSeaSimulator:
                 self.keys.ensure_link(sat.satellite_id, gs.station_id)
 
     def start(self) -> None:
+        if not self.auto_simulation:
+            return
         if self._running:
             return
         self._running = True
@@ -71,6 +78,8 @@ class CosmicSeaSimulator:
         self._thread.start()
 
     def stop(self) -> None:
+        if not self.auto_simulation:
+            return
         self._running = False
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=1.0)
@@ -91,13 +100,52 @@ class CosmicSeaSimulator:
             ]
             return {
                 "time": datetime.now(timezone.utc).isoformat(),
+                "mode": "simulation" if self.auto_simulation else "external_ingest",
                 "active_ground_station": self.active_ground.station_id,
                 "ground_stations": [gs.station_id for gs in self.ground_stations],
                 "satellites": satellites,
                 "blocked": blocked,
+                "defense_kpis": self.defense.kpis(),
                 "alerts": self.trust.all_alerts(limit=30),
                 "events": [ev.__dict__ for ev in self._events[-20:]],
             }
+
+    def ingest_external_telemetry(self, satellite_id: str, battery: float, temp_c: float) -> dict[str, str]:
+        with self._lock:
+            if not any(x.satellite_id == satellite_id for x in self.satellites):
+                return {"status": "error", "reason": "unknown_satellite"}
+
+            payload = {
+                "type": "telemetry",
+                "battery": battery,
+                "temp_c": temp_c,
+                "source": "external_feed",
+            }
+            packet = self.security.issue_packet(
+                sender_id=satellite_id,
+                receiver_id=self.active_ground.station_id,
+                payload=payload,
+                timestamp_override=self._clock_time(satellite_id),
+            )
+            self._process_packet(packet, declared_payload_type="telemetry")
+            return {"status": "ok"}
+
+    def ingest_external_command(self, command: str, satellite_id: str, delta: int = 0) -> dict[str, str]:
+        with self._lock:
+            if not any(x.satellite_id == satellite_id for x in self.satellites):
+                return {"status": "error", "reason": "unknown_satellite"}
+            if self._is_isolated(satellite_id):
+                return {"status": "error", "reason": "satellite_isolated"}
+
+            payload = {"type": "command", "cmd": command, "delta": delta, "source": "external_feed"}
+            packet = self.security.issue_packet(
+                sender_id=self.active_ground.station_id,
+                receiver_id=satellite_id,
+                payload=payload,
+                timestamp_override=self._clock_time(self.active_ground.station_id),
+            )
+            self._process_packet(packet, declared_payload_type="command")
+            return {"status": "ok"}
 
     def _run_loop(self) -> None:
         while self._running:
@@ -199,6 +247,7 @@ class CosmicSeaSimulator:
         if not self.trust.has_identity(packet.sender_id):
             self.trust.ensure_identity(packet.sender_id, role="external")
             self.ai.ensure_identity(packet.sender_id)
+            self.defense.ensure_identity(packet.sender_id)
 
         if self._is_isolated(packet.sender_id):
             self._events.append(Event(level="critical", message=f"Blocked packet from isolated {packet.sender_id}"))
@@ -206,9 +255,8 @@ class CosmicSeaSimulator:
 
         known_receivers = {gs.station_id for gs in self.ground_stations} | {sat.satellite_id for sat in self.satellites}
         if packet.receiver_id not in known_receivers:
-            self.trust.apply_violation(packet.sender_id, "unknown_receiver", severity="major", confidence=0.95)
+            self._apply_violation(packet.sender_id, "unknown_receiver", severity="major", confidence=0.95)
             self._events.append(Event(level="critical", message=f"Rejected packet to unknown receiver {packet.receiver_id}"))
-            self._check_isolation(packet.sender_id)
             return
 
         result = self.security.verify_packet(packet, expected_receiver=None)
@@ -218,11 +266,12 @@ class CosmicSeaSimulator:
             role = self.trust.role(packet.sender_id)
 
             if role == "satellite" and payload_type == "command":
-                self.trust.apply_violation(packet.sender_id, "command_origin_violation", severity="major", confidence=0.88)
+                self._apply_violation(packet.sender_id, "command_origin_violation", severity="major", confidence=0.88)
             elif role == "ground_station" and payload_type == "telemetry":
-                self.trust.apply_violation(packet.sender_id, "telemetry_origin_violation", severity="minor", confidence=0.62)
+                self._apply_violation(packet.sender_id, "telemetry_origin_violation", severity="minor", confidence=0.62)
             else:
                 self.trust.mark_good(packet.sender_id)
+                self._events.extend(self.defense.on_good(packet.sender_id))
 
             ai_out = self.ai.observe(
                 identity=packet.sender_id,
@@ -235,7 +284,7 @@ class CosmicSeaSimulator:
             )
             if ai_out.is_anomaly:
                 severity = "major" if ai_out.confidence >= 0.85 else "minor"
-                self.trust.apply_violation(
+                self._apply_violation(
                     packet.sender_id,
                     f"ai_anomaly(score={ai_out.score:.2f})",
                     severity=severity,
@@ -254,7 +303,7 @@ class CosmicSeaSimulator:
             limit = self.config.ground_freq_limit if role == "ground_station" else self.config.satellite_freq_limit
             abnormal, confidence = self.security.detect_abnormal_frequency(packet.sender_id, limit=limit)
             if abnormal:
-                self.trust.apply_violation(
+                self._apply_violation(
                     packet.sender_id,
                     "abnormal_command_frequency",
                     severity="minor",
@@ -266,7 +315,6 @@ class CosmicSeaSimulator:
                         message=f"{packet.sender_id} exceeded frequency baseline (confidence={confidence:.2f})",
                     )
                 )
-            self._check_isolation(packet.sender_id)
             return
 
         major_reasons = {
@@ -279,16 +327,11 @@ class CosmicSeaSimulator:
         }
         severity = "major" if result.reason in major_reasons else "minor"
         confidence = 0.95 if severity == "major" else 0.7
-        self.trust.apply_violation(packet.sender_id, result.reason, severity=severity, confidence=confidence)
+        self._apply_violation(packet.sender_id, result.reason, severity=severity, confidence=confidence)
         self._events.append(Event(level="critical", message=f"Rejected packet from {packet.sender_id}: {result.reason}"))
-        self._check_isolation(packet.sender_id)
 
-    def _check_isolation(self, identity: str) -> None:
-        state = self.trust.get_state(identity)
-        if state.stage == "isolated":
-            self._blocked.add(identity)
-            self.keys.revoke_identity(identity)
-            self._events.append(Event(level="critical", message=f"{identity} isolated and cryptographically revoked"))
+    def _apply_violation(self, identity: str, reason: str, severity: str, confidence: float) -> None:
+        self._events.extend(self.defense.on_violation(identity, reason, severity=severity, confidence=confidence))
 
     def _can_transmit(self, identity: str, payload_type: str) -> bool:
         return self.trust.can_transmit(identity, payload_type)
