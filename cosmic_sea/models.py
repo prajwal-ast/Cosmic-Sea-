@@ -9,6 +9,7 @@ from typing import Any
 class MessagePacket:
     sender_id: str
     receiver_id: str
+    key_epoch: int
     timestamp: str
     nonce: str
     ciphertext: str

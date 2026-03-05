@@ -111,7 +111,7 @@
         const state = await response.json();
 
         document.getElementById('timestamp').textContent =
-          `Ground Station: ${state.ground_station} | UTC: ${state.time}`;
+          `Active Ground Station: ${state.active_ground_station} | All Stations: ${state.ground_stations.join(', ')} | UTC: ${state.time}`;
 
         const grid = document.getElementById('satellite-grid');
         grid.innerHTML = '';
@@ -119,12 +119,12 @@
           const card = document.createElement('div');
           card.className = 'card';
           const statusClass = sat.isolated ? 'isolated' : 'healthy';
-          const statusLabel = sat.isolated ? 'Isolated' : 'Active';
+          const statusLabel = sat.isolated ? 'Isolated' : sat.stage.toUpperCase();
           card.innerHTML = `
             <div><strong>${sat.id}</strong></div>
             <div class="score">Trust ${sat.trust.toFixed(2)}</div>
             <div class="${statusClass}">${statusLabel}</div>
-            <div class="meta">Zero Trust verification: signature + HMAC + nonce/timestamp + AES</div>
+            <div class="meta">Zero Trust: signature + HMAC + timestamp/nonce + AES + key epochs</div>
           `;
           grid.appendChild(card);
         });
