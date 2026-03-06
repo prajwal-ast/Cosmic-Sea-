@@ -127,6 +127,10 @@ Open `http://127.0.0.1:5000`.
   - `INGEST_TOKEN=<same-token-as-api>`
   - `SATELLITE_IDS=SAT-01,SAT-02,SAT-03,SAT-04,SAT-05,SAT-06`
   - `WORKER_PUSH_INTERVAL=1.0`
+- Worker exposes health endpoints on `PORT`:
+  - `/`
+  - `/healthz`
+- Set worker healthcheck path to `/healthz` (or `/`).
 - This worker posts external telemetry/command events to `POST /api/ingest`.
 
 ### 3) Real-time dashboard
