@@ -65,8 +65,7 @@ class CosmicSeaSimulator:
                 -self.config.clock_drift_max_ms,
                 self.config.clock_drift_max_ms,
             )
-            for gs in self.ground_stations:
-                self.keys.ensure_link(sat.satellite_id, gs.station_id)
+            sat.orbital_phase_deg = random.uniform(0.0, 359.0)
 
     def start(self) -> None:
         if not self.auto_simulation:
@@ -95,12 +94,14 @@ class CosmicSeaSimulator:
                     "stage": trust_data[sat.satellite_id]["stage"],
                     "isolated": trust_data[sat.satellite_id]["isolated"],
                     "ai_risk": self.ai.risk_score(sat.satellite_id),
+                    "position": self._satellite_position(sat.satellite_id),
                 }
                 for sat in self.satellites
             ]
             return {
                 "time": datetime.now(timezone.utc).isoformat(),
                 "mode": "simulation" if self.auto_simulation else "external_ingest",
+                "crypto_mode": "hybrid-ecc-aes256gcm-orbit-aware",
                 "active_ground_station": self.active_ground.station_id,
                 "ground_stations": [gs.station_id for gs in self.ground_stations],
                 "satellites": satellites,
@@ -125,6 +126,7 @@ class CosmicSeaSimulator:
                 sender_id=satellite_id,
                 receiver_id=self.active_ground.station_id,
                 payload=payload,
+                satellite_position=self._satellite_position(satellite_id),
                 timestamp_override=self._clock_time(satellite_id),
             )
             self._process_packet(packet, declared_payload_type="telemetry")
@@ -142,6 +144,7 @@ class CosmicSeaSimulator:
                 sender_id=self.active_ground.station_id,
                 receiver_id=satellite_id,
                 payload=payload,
+                satellite_position=self._ground_position(self.active_ground.station_id),
                 timestamp_override=self._clock_time(self.active_ground.station_id),
             )
             self._process_packet(packet, declared_payload_type="command")
@@ -156,6 +159,7 @@ class CosmicSeaSimulator:
         with self._lock:
             self._tick += 1
             self._maybe_handover_ground_station()
+            self._advance_orbits()
 
             for sat in self.satellites:
                 self._emit_telemetry(sat.satellite_id)
@@ -186,6 +190,7 @@ class CosmicSeaSimulator:
             sender_id=sender,
             receiver_id=receiver,
             payload=payload,
+            satellite_position=self._satellite_position(sender),
             timestamp_override=self._clock_time(sender),
         )
         self._captured_packet = deepcopy(packet)
@@ -209,6 +214,7 @@ class CosmicSeaSimulator:
             sender_id=sender,
             receiver_id=receiver,
             payload=payload,
+            satellite_position=self._ground_position(sender),
             timestamp_override=self._clock_time(sender),
         )
         self._transmit(packet, "command")
@@ -324,6 +330,7 @@ class CosmicSeaSimulator:
             "unknown_identity",
             "identity_revoked",
             "key_epoch_invalid",
+            "key_exchange_invalid",
         }
         severity = "major" if result.reason in major_reasons else "minor"
         confidence = 0.95 if severity == "major" else 0.7
@@ -354,8 +361,11 @@ class CosmicSeaSimulator:
             sender_id="SAT-FAKE",
             receiver_id=target,
             key_epoch=1,
+            packet_id="forged-packet",
             timestamp=datetime.now(timezone.utc).isoformat(),
+            satellite_position="LEO:0.0,0.0,0.0",
             nonce="badnonce",
+            ephemeral_public_key="badkey",
             ciphertext="inject_payload",
             signature="invalidsig",
             hmac_tag="invalidhmac",
@@ -376,6 +386,7 @@ class CosmicSeaSimulator:
             sender_id=self.active_ground.station_id,
             receiver_id=self.active_ground.station_id,
             payload={"type": "command", "cmd": "DISABLE_SAFETY"},
+            satellite_position=self._ground_position(self.active_ground.station_id),
             timestamp_override=self._clock_time(self.active_ground.station_id),
         )
         forged.sender_id = victim
@@ -412,3 +423,20 @@ class CosmicSeaSimulator:
         skew = self._clock_offsets_ms.get(identity, 0)
         dt = datetime.now(timezone.utc) + timedelta(milliseconds=skew)
         return dt.isoformat()
+
+    def _advance_orbits(self) -> None:
+        for sat in self.satellites:
+            sat.orbital_phase_deg = (sat.orbital_phase_deg + random.uniform(3.5, 9.5)) % 360.0
+
+    def _satellite_position(self, satellite_id: str) -> str:
+        sat = next(x for x in self.satellites if x.satellite_id == satellite_id)
+        x, y, z = sat.position()
+        return f"LEO:{x},{y},{z}"
+
+    @staticmethod
+    def _ground_position(station_id: str) -> str:
+        anchors = {
+            "GROUND-ALPHA": "GROUND:1267.4,6142.2,0.0",
+            "GROUND-BETA": "GROUND:-1480.8,6023.6,0.0",
+        }
+        return anchors.get(station_id, "GROUND:0.0,6371.0,0.0")

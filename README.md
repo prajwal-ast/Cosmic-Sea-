@@ -29,22 +29,31 @@ Cosmic Sea is a simulation-based Zero Trust security framework for satellite com
 
 ### Control mapping
 - **Spoofing/Impersonation** -> Ed25519 signature verification, identity revocation.
-- **Tampering/MITM** -> HMAC-SHA256 per-link key-epoch material.
+- **Tampering/MITM** -> HMAC-SHA256 over orbit-aware packet context plus hybrid ECC key exchange.
 - **Replay** -> timestamp skew checks + nonce cache + TTL.
-- **Key compromise window** -> automatic link key rotation + bounded epoch retention.
+- **Key compromise window** -> evolving per-packet AES/HMAC keys derived from ECC shared secret, packet ID, timestamp, and satellite position.
 - **Behavioral abuse** -> mission-aware trust scoring and staged response policy.
 
 ## 3. Security Architecture Updates
 - Long-term identity signing keys per node.
-- Link-specific key schedule (AES-256-GCM + HMAC keys) with epoch rotation.
-- Packet now carries `key_epoch`; receiver verifies epoch validity.
+- Hybrid encryption:
+  - X25519 ECC key agreement for shared-secret establishment
+  - AES-256-GCM for payload encryption
+  - HKDF-SHA256 for orbit-aware per-packet key derivation
+- Packet now carries `key_epoch`, `packet_id`, `satellite_position`, and sender ephemeral ECC public key.
 - Identity revocation and post-isolation cryptographic blocking.
+- Evolving cryptographic keys derived from:
+  - ratcheting `key_epoch`
+  - `timestamp`
+  - `packet_id`
+  - `satellite_position`
 
 ## 4. Network Realism Updates
 - Configurable base latency + jitter.
 - Probabilistic packet loss.
 - Bit error injection (ciphertext/HMAC/signature/nonce corruption).
 - Per-node clock drift used in packet timestamps.
+- Simulated orbit phase and satellite position updates.
 - Satellite-ground visibility windows.
 - Ground-station handover between `GROUND-ALPHA` and `GROUND-BETA`.
 
@@ -108,6 +117,44 @@ python app.py
 ```
 
 Open `http://127.0.0.1:5000`.
+
+## Free Demo Deployment (Recommended)
+### 1) Host the dashboard on GitHub Pages
+- This repo now includes a static dashboard in `docs/index.html`.
+- In GitHub:
+  - open repo `Settings`
+  - go to `Pages`
+  - set source to `Deploy from a branch`
+  - choose branch `main`
+  - choose folder `/docs`
+- Your dashboard will be available at:
+  - `https://<your-github-username>.github.io/<repo-name>/`
+
+### 2) Run the backend locally
+```bash
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
+```
+
+### 3) Point GitHub Pages to your backend
+- The static dashboard has a backend URL box at the top.
+- For local-only demo on the same machine, use:
+  - `http://127.0.0.1:5000`
+- For a public demo, expose your local backend with a tunnel and paste that tunnel URL instead.
+
+### 4) Optional public backend tunnel
+- Good options:
+  - `cloudflared tunnel --url http://127.0.0.1:5000`
+  - `ngrok http 5000`
+- Then paste the generated HTTPS URL into the dashboard backend target.
+
+### 5) Backend settings for browser access
+- Set:
+  - `CORS_ORIGIN=*`
+- If you want tighter security for the demo, set it to your GitHub Pages domain instead.
 
 ## Deployment (Railway Recommended)
 ### 1) Deploy API service

@@ -19,9 +19,6 @@ class SecurityConfig:
 
     throttle_drop_ratio: float = 0.45
 
-    key_rotation_interval_seconds: int = 20
-    max_link_epochs: int = 3
-
     base_latency_ms: int = 120
     jitter_ms: int = 70
     packet_loss_rate: float = 0.06

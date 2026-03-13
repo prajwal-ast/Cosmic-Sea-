@@ -10,8 +10,11 @@ class MessagePacket:
     sender_id: str
     receiver_id: str
     key_epoch: int
+    packet_id: str
     timestamp: str
+    satellite_position: str
     nonce: str
+    ephemeral_public_key: str
     ciphertext: str
     signature: str
     hmac_tag: str
