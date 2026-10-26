@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Phase I Project Report - Cosmic Sea</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 24mm 18mm 22mm 22mm;
+      }
+      body {
+        font-family: "Times New Roman", serif;
+        font-size: 12pt;
+        line-height: 1.45;
+        color: #111;
+        margin: 0;
+      }
+      h1, h2, h3, h4 {
+        color: #092e5c;
+        margin: 0 0 8px 0;
+      }
+      h1 {
+        font-size: 22pt;
+        text-align: center;
+      }
+      h2 {
+        font-size: 17pt;
+        border-bottom: 1px solid #b8c9df;
+        padding-bottom: 4px;
+        margin-top: 18px;
+      }
+      h3 {
+        font-size: 13pt;
+        margin-top: 14px;
+      }
+      h4 {
+        font-size: 12pt;
+        margin-top: 12px;
+      }
+      p {
+        text-align: justify;
+        margin: 0 0 10px 0;
+      }
+      .page {
+        page-break-after: always;
+      }
+      .title-page {
+        text-align: center;
+        padding-top: 18mm;
+      }
+      .logo {
+        width: 95px;
+        display: block;
+        margin: 0 auto 16px auto;
+      }
+      .college {
+        font-size: 21pt;
+        font-weight: 700;
+        color: #092e5c;
+      }
+      .dept {
+        font-size: 15pt;
+        margin-top: 6px;
+      }
+      .report-type {
+        margin-top: 28px;
+        font-size: 15pt;
+        font-weight: 700;
+      }
+      .project-title {
+        margin-top: 18px;
+        font-size: 22pt;
+        font-weight: 700;
+        line-height: 1.3;
+        color: #0b3567;
+      }
+      .meta-box {
+        margin: 24px auto 0 auto;
+        width: 92%;
+        border: 1px solid #b8c9df;
+        border-collapse: collapse;
+      }
+      .meta-box td, .meta-box th {
+        border: 1px solid #b8c9df;
+        padding: 8px 10px;
+      }
+      .meta-box th {
+        background: #eef3f9;
+      }
+      .center {
+        text-align: center;
+      }
+      .signature-space {
+        height: 36px;
+      }
+      .toc p {
+        margin: 6px 0;
+      }
+      .small {
+        font-size: 11pt;
+      }
+      .chapter-title {
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .note-box {
+        border: 1px solid #c9d4e3;
+        background: #f8fbff;
+        padding: 10px 12px;
+        margin: 10px 0 14px 0;
+      }
+      .footer-line {
+        margin-top: 18px;
+        border-top: 1px solid #c9d4e3;
+        padding-top: 8px;
+        font-size: 10.5pt;
+        color: #3c4c63;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page title-page">
+      <img class="logo" src="../acsce_logo.jpg" alt="ACS College of Engineering Logo" />
+      <div class="college">ACS College of Engineering</div>
+      <div class="dept">Department of Cyber Security</div>
+      <div class="report-type">PHASE I PROJECT REPORT</div>
+      <div class="project-title">Evolving Encryption and AI Driven Cyber Defense for Satellite Communication Networks</div>
+      <table class="meta-box" style="margin-top: 30px;">
+        <tr>
+          <th colspan="2" class="center">Submitted By</th>
+        </tr>
+        <tr>
+          <td>Prajval Raj K</td>
+          <td>1AH23CY037</td>
+        </tr>
+        <tr>
+          <td>Mohammad Taha Shariff</td>
+          <td>1AH23CY031</td>
+        </tr>
+        <tr>
+          <td>Shrikar S</td>
+          <td>1AH23CY052</td>
+        </tr>
+        <tr>
+          <td>Anil Kumar Panchal</td>
+          <td>1AH24CY400</td>
+        </tr>
+      </table>
+      <table class="meta-box">
+        <tr>
+          <th>Project Guide</th>
+          <td>Mrs Majida Vettil Chettiyam</td>
+        </tr>
+        <tr>
+          <th>Department</th>
+          <td>Cyber Security</td>
+        </tr>
+        <tr>
+          <th>Academic Purpose</th>
+          <td>Final Year Project - Phase I Review Submission</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="page">
+      <h2 class="chapter-title center">Certificate</h2>
+      <p>
+        This is to certify that the Phase I project report entitled <strong>“Evolving Encryption and AI Driven Cyber Defense for Satellite Communication Networks”</strong> is a bona fide work carried out by <strong>Prajval Raj K (1AH23CY037), Mohammad Taha Shariff (1AH23CY031), Shrikar S (1AH23CY052), and Anil Kumar Panchal (1AH24CY400)</strong> in the <strong>Department of Cyber Security, ACS College of Engineering</strong>, as a part of the partial fulfillment for the academic requirements of the final year project work.
+      </p>
+      <p>
+        The work presented in this report reflects the Phase I progress of the project and has been prepared under the guidance and supervision of <strong>Mrs Majida Vettil Chettiyam</strong>.
+      </p>
+      <table class="meta-box" style="margin-top: 28px;">
+        <tr>
+          <th>Guide Signature</th>
+          <th>Head of Department</th>
+          <th>Principal</th>
+        </tr>
+        <tr>
+          <td class="signature-space"></td>
+          <td class="signature-space"></td>
+          <td class="signature-space"></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="page">
+      <h2 class="chapter-title center">Declaration</h2>
+      <p>
+        We hereby declare that the work presented in this Phase I project report entitled <strong>“Evolving Encryption and AI Driven Cyber Defense for Satellite Communication Networks”</strong> is an original work carried out by us under the guidance of our faculty guide. To the best of our knowledge, this report has not been submitted previously in part or in full to any other institution or university for the award of any degree or diploma.
+      </p>
+      <p>
+        We further declare that all references, concepts, and supporting sources used for this report have been appropriately acknowledged wherever necessary.
+      </p>
+      <table class="meta-box" style="margin-top: 26px;">
+        <tr>
+          <th>Student Name</th>
+          <th>USN</th>
+          <th>Signature</th>
+        </tr>
+        <tr><td>Prajval Raj K</td><td>1AH23CY037</td><td></td></tr>
+        <tr><td>Mohammad Taha Shariff</td><td>1AH23CY031</td><td></td></tr>
+        <tr><td>Shrikar S</td><td>1AH23CY052</td><td></td></tr>
+        <tr><td>Anil Kumar Panchal</td><td>1AH24CY400</td><td></td></tr>
+      </table>
+    </div>
+
+    <div class="page">
+      <h2 class="chapter-title center">Acknowledgement</h2>
+      <p>
+        We express our sincere gratitude to ACS College of Engineering and the Department of Cyber Security for providing us with the academic environment and support required for carrying out this project work.
+      </p>
+      <p>
+        We are especially thankful to our project guide, <strong>Mrs Majida Vettil Chettiyam</strong>, for her guidance, encouragement, and continuous support during the development of this Phase I work. Her suggestions helped us shape the technical direction of the project in a disciplined and meaningful manner.
+      </p>
+      <p>
+        We also thank our faculty members, classmates, and well-wishers for their support and feedback. Finally, we acknowledge the role of research articles, technical documentation, and cybersecurity literature that helped us understand Zero Trust security, hybrid encryption, anomaly detection, and autonomous defense models in satellite communication environments.
+      </p>
+    </div>
+
+    <div class="page">
+      <h2 class="chapter-title center">Abstract</h2>
+      <p>
+        Satellite communication networks are becoming increasingly important in applications such as navigation, remote sensing, weather forecasting, broadcasting, scientific missions, and defense. These systems rely on the exchange of command and telemetry data between satellites and ground stations. Because such communication is high-value and mission-critical, it is vulnerable to cyber threats such as replay attacks, spoofing, command injection, identity impersonation, packet tampering, and stealthy malicious behavior.
+      </p>
+      <p>
+        This project presents a simulation-driven cybersecurity framework named <strong>Cosmic Sea</strong> for securing satellite communication networks. The proposed framework applies a Zero Trust model where each packet must be validated continuously instead of trusting communication by default. The system combines hybrid encryption using AES-256-GCM for payload protection and ECC-based X25519 key exchange for shared-secret establishment. On top of this, the project introduces evolving orbit-aware key derivation using packet ID, timestamp, satellite position, and key epoch to derive fresh packet-level cryptographic material.
+      </p>
+      <p>
+        Beyond cryptography, the framework includes digital signatures, HMAC-based integrity verification, nonce and timestamp freshness validation, AI-based anomaly detection, dynamic trust scoring, and autonomous cyber defense actions such as monitor, throttle, quarantine, and isolate. A mission control dashboard provides real-time visibility into trust scores, blocked nodes, alerts, and defense KPIs.
+      </p>
+      <p>
+        This report presents the Phase I structure, concepts, technical direction, and progress of the project. At this stage, the project has a strong prototype foundation while still retaining additional scope for validation, comparative analysis, and final completion in later phases.
+      </p>
+    </div>
+
+    <div class="page toc">
+      <h2 class="chapter-title center">Table of Contents</h2>
+      <p>1. Introduction</p>
+      <p>2. Problem Statement</p>
+      <p>3. Objectives</p>
+      <p>4. Scope of the Project</p>
+      <p>5. Literature Survey</p>
+      <p>6. Existing System Overview</p>
+      <p>7. Proposed System Overview</p>
+      <p>8. System Architecture</p>
+      <p>9. Security Framework and Technical Details</p>
+      <p>10. AI Model and Trust-Based Defense</p>
+      <p>11. Work Completed in Phase I</p>
+      <p>12. Conclusion and Future Scope</p>
+      <p>13. References</p>
+    </div>
+
+    <div class="page">
+      <h2>1. Introduction</h2>
+      <p>
+        Satellite communication systems are essential for modern digital infrastructure. They support communication across large geographical regions and are used in navigation, weather forecasting, remote sensing, surveillance, scientific missions, and national security applications. A satellite network usually consists of orbital nodes and ground stations exchanging control instructions and telemetry data. Because these systems are distributed, remote, and critical, they require a high degree of reliability and security.
+      </p>
+      <p>
+        Traditional security approaches are often designed around static trust assumptions. In those models, devices that are already part of the network may be treated as trusted after initial verification. Such an approach is not sufficient for high-risk environments like satellite communication, where attackers may attempt replay attacks, spoofing, packet manipulation, and identity impersonation. A single compromised communication path can affect mission safety, service continuity, or data confidentiality.
+      </p>
+      <p>
+        This project addresses that need by proposing a Zero Trust security framework for satellite communication networks. The system does not trust communication by default. Instead, every message is checked continuously at the packet level. The project also combines evolving hybrid cryptography, AI-based anomaly detection, trust scoring, and autonomous response in order to create a system that is not just secure but also adaptive and self-defending.
+      </p>
+
+      <h2>2. Problem Statement</h2>
+      <p>
+        Satellite communication networks are vulnerable to identity spoofing, packet replay, unauthorized command injection, packet tampering, and stealthy abnormal behavior from compromised or malicious nodes. Existing systems often rely on fixed cryptographic arrangements, static trust assumptions, and delayed manual response. Such limitations are insufficient for distributed and high-value environments where secure command and telemetry exchange is critical. Therefore, there is a need for a more adaptive cybersecurity framework that continuously validates communication, derives stronger context-aware cryptographic keys, detects abnormal behavior early, and autonomously contains malicious activity.
+      </p>
+
+      <h2>3. Objectives</h2>
+      <p>
+        The primary objective of this project is to design and implement a secure satellite communication simulation that demonstrates how modern cybersecurity principles can be applied to space-ground packet exchange. The project specifically aims to simulate communication between multiple satellites and a ground station, protect every packet using hybrid cryptographic techniques, detect malicious or abnormal behavior using AI, assign dynamic trust scores to network nodes, and automatically respond to threats through an autonomous cyber defense engine. Another important objective is to provide a clear dashboard-based visualization layer so that the internal security state of the system can be monitored in real time.
+      </p>
+
+      <h2>4. Scope of the Project</h2>
+      <p>
+        The scope of the project covers packet-level secure communication within a simulated satellite communication network. It includes node simulation, telemetry and command flow, hybrid encryption, digital signatures, integrity checks, replay protection, anomaly detection, trust evaluation, and autonomous defense actions. The project also includes a mission control dashboard and deployment support for academic demonstration.
+      </p>
+      <p>
+        The project is intentionally limited to a simulation-based environment in Phase I. It does not claim to be flight-certified mission software or a fully operational satellite control platform. Real orbital dynamics, industrial-grade AI pipelines, and large-scale production deployment are beyond the current phase and remain part of the future scope.
+      </p>
+    </div>
+
+    <div class="page">
+      <h2>5. Literature Survey</h2>
+      <p>
+        The conceptual basis of this project comes from three major areas: Zero Trust architecture, satellite communication security, and anomaly detection in cyber-physical systems. Zero Trust principles, as discussed in the NIST SP 800-207 architecture guidance, emphasize continuous verification of every access request instead of relying on implicit trust. This principle is highly relevant for satellite communication, where devices cannot simply be trusted because they belong to the same network.
+      </p>
+      <p>
+        Space communication security guidance and related satellite network security surveys highlight several recurring threats, including spoofing, replay, command injection, eavesdropping, signal interference, and malicious control-plane behavior. These studies make it clear that satellite communication is both technically challenging and strategically important from a cybersecurity perspective.
+      </p>
+      <p>
+        Recent work in anomaly detection demonstrates that AI and machine learning methods can improve attack identification by detecting deviations from normal communication behavior. However, many such systems are studied separately from cryptographic enforcement. One of the gaps identified in the literature is the lack of a tightly integrated framework that combines evolving encryption, behavioral intelligence, trust management, and automated containment for satellite communication. This project is intended to address that gap at a prototype level.
+      </p>
+
+      <h2>6. Existing System Overview</h2>
+      <p>
+        In many traditional communication security models, trust is established at the edge or at the beginning of a session, after which communication is assumed to remain safe. These systems often use fixed symmetric keys or long-lived sessions, perimeter-based trust, and reactive logging mechanisms. Although such models may be sufficient for simpler environments, they become weak in distributed and high-value networks such as satellite systems.
+      </p>
+      <p>
+        The main weaknesses of traditional systems include the reuse of static keys, insufficient contextual verification, poor resistance to replayed packets, limited behavioral monitoring, and heavy dependence on manual operator response. If an attacker captures a valid packet or compromises a trusted node, the damage can continue until the issue is noticed and acted upon.
+      </p>
+
+      <h2>7. Proposed System Overview</h2>
+      <p>
+        The proposed system is a Zero Trust framework for satellite communication networks. In this system, multiple satellites and a ground station exchange packet-based telemetry and commands through a simulated environment. Every packet must pass through a dedicated security layer before it is accepted. The security layer performs hybrid encryption, digital signature verification, HMAC-based integrity checking, and replay protection using timestamps and nonces.
+      </p>
+      <p>
+        After packet verification, the system studies the behavior of the sender using an AI-based anomaly detector. The results are passed into a trust engine that updates the trust score of each node dynamically. If a node behaves suspiciously or fails repeated verification checks, the autonomous cyber defense engine can move it through stages such as monitor, throttle, quarantine, and isolate. The complete system state is then displayed on a mission control dashboard.
+      </p>
+    </div>
+
+    <div class="page">
+      <h2>8. System Architecture</h2>
+      <p>
+        The architecture of the system is layered. At the first layer is the communication layer, which models satellites and ground stations exchanging packets. At the second layer is the security layer, which applies cryptographic controls to every message. At the third layer is the intelligence layer, which performs AI-based anomaly analysis. At the fourth layer is the trust and defense layer, which assigns trust values and triggers autonomous responses. At the fifth layer is the visualization layer, which displays the system state to the user.
+      </p>
+      <div class="note-box">
+        <strong>Architecture flow:</strong> Communication Layer → Cryptographic Security Layer → AI Anomaly Detection Layer → Trust Engine → Autonomous Defense Layer → Dashboard Visualization
+      </div>
+      <p>
+        This architecture is important because it makes the system more than a simple simulator. It becomes a complete secure communication pipeline in which each stage contributes a specific type of protection or intelligence.
+      </p>
+
+      <h2>9. Security Framework and Technical Details</h2>
+      <h3>9.1 Hybrid Encryption</h3>
+      <p>
+        The project uses hybrid encryption. The actual payload data is encrypted using AES-256-GCM, which is efficient and suitable for packet-level protection. The shared secret required to derive this packet encryption material is established using ECC, specifically X25519 key exchange. This approach provides both performance and strong security.
+      </p>
+
+      <h3>9.2 Evolving Cryptographic Keys</h3>
+      <p>
+        One of the central technical ideas in the project is evolving cryptographic keys. The system does not use one static symmetric key across an entire communication session. Instead, it derives a new packet-level key using a combination of the ECC shared secret, packet ID, timestamp, satellite position, and key epoch. This means that even when the same two nodes communicate repeatedly, the effective encryption context continues to evolve.
+      </p>
+      <p>
+        The use of evolving keys reduces the damage that would occur if one packet context were exposed. It also strengthens packet uniqueness and supports a more adaptive cryptographic model suitable for changing orbital conditions.
+      </p>
+
+      <h3>9.3 Authentication and Integrity</h3>
+      <p>
+        The framework uses Ed25519 digital signatures to verify that the packet truly came from the claimed sender. It also uses HMAC-SHA256 to ensure that packet contents have not been modified during transmission. Together, these methods protect both identity and message integrity.
+      </p>
+
+      <h3>9.4 Replay Protection</h3>
+      <p>
+        Replay protection is implemented using timestamps, nonces, packet identifiers, and a nonce cache with expiry. If an old or duplicated packet is received, the system detects it and rejects it. This is especially important in satellite systems, where replayed commands could lead to unsafe operations.
+      </p>
+
+      <h3>9.5 Orbit-Aware Key Derivation</h3>
+      <p>
+        The project includes orbit-aware security by incorporating satellite position into key derivation. Each satellite has a simulated orbital phase and position, and this value becomes part of the cryptographic derivation context. This adds mission-specific security context rather than treating the system like a generic terrestrial network.
+      </p>
+    </div>
+
+    <div class="page">
+      <h2>10. AI Model and Trust-Based Defense</h2>
+      <h3>10.1 AI Model Used</h3>
+      <p>
+        The project uses an unsupervised online statistical anomaly detection model. It is not a decision tree, neural network, or deep learning model. Instead, it maintains a behavioral baseline for each node using running mean and variance estimation over packet-level features. These features include timing patterns, role, receiver type, payload type, and telemetry values such as temperature and battery level.
+      </p>
+      <p>
+        When a new packet arrives, the system compares its feature vector against the previously learned baseline for that node. It then computes an anomaly score and an anomaly confidence level. If the deviation is large enough, the system marks the behavior as suspicious and passes that result to the trust engine.
+      </p>
+
+      <h3>10.2 Dynamic Trust Scoring</h3>
+      <p>
+        Each node in the system has a trust score. Trust increases with correct behavior and decreases with suspicious or malicious activity. The trust model is role-aware, so the behavior of ground stations and satellites can be weighted differently. Instead of a binary trusted-or-not-trusted model, the project uses stages such as healthy, monitor, throttle, quarantine, and isolated.
+      </p>
+
+      <h3>10.3 Autonomous Defense</h3>
+      <p>
+        Once trust falls or repeated violations are detected, the autonomous defense engine takes action. The response can range from increased observation to rate-limiting, command lockdown, or full isolation with identity revocation. The system also records KPI-style defense metrics such as mean time to detection, mean time to containment, and containment rate.
+      </p>
+
+      <h2>11. Work Completed in Phase I</h2>
+      <p>
+        In Phase I, the project has already achieved the following at a prototype level. A packet-based communication simulation has been created for multiple satellites and a ground station. The Zero Trust verification flow has been integrated into every packet. Hybrid encryption, digital signatures, HMAC validation, replay checks, evolving orbit-aware key derivation, AI anomaly detection, dynamic trust scoring, and autonomous defense stages are all implemented in the prototype. A live dashboard has also been developed for monitoring the system.
+      </p>
+      <p>
+        At the same time, the project is honestly positioned as a Phase I system. Full comparative benchmarking, deeper test coverage, publication-grade evaluation, and stronger real-world integration remain future work.
+      </p>
+
+      <h2>12. Conclusion and Future Scope</h2>
+      <p>
+        This project presents a meaningful and technically relevant approach to securing satellite communication networks. Its main contribution lies in integrating evolving hybrid encryption, orbit-aware security context, AI-based anomaly detection, trust scoring, and autonomous cyber defense into one coherent Zero Trust architecture. The system is not limited to one protective technique but instead forms a complete pipeline from communication to detection and response.
+      </p>
+      <p>
+        Future work can extend the project through richer orbital simulation, larger constellations, real telemetry sources, stronger comparative evaluation, additional attack scenarios, and more advanced AI models. These additions can transform the current prototype into a more mature academic and practical cybersecurity framework.
+      </p>
+    </div>
+
+    <div>
+      <h2>13. References</h2>
+      <p>1. Rose, S., Borchert, O., Mitchell, S., and Connelly, S., <em>Zero Trust Architecture</em>, NIST SP 800-207, 2020.</p>
+      <p>2. CCSDS security guidance and space data link security recommendations for protected space-ground communications.</p>
+      <p>3. Recent survey papers on satellite communication network security, spoofing, replay, and anomaly detection.</p>
+      <p>4. Research articles on AI-based anomaly detection for communication and cyber-physical systems.</p>
+      <div class="footer-line">
+        Prepared for Phase I final year project review, Department of Cyber Security, ACS College of Engineering.
+      </div>
+    </div>
+  </body>
+</html>
