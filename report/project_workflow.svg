@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="700" viewBox="0 0 1400 700">
+<rect width="1600" height="700" fill="white"/>
+<style>.t{font:bold 34px Arial;fill:#14213d}.h{font:bold 24px Arial;fill:#14213d}.p{font:20px Arial;fill:#1f2937}.b{stroke:#2563eb;stroke-width:3;rx:14}.a{stroke:#475569;stroke-width:3;fill:none;marker-end:url(#arrow)}</style>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#475569"/></marker></defs>
+<text x="700" y="60" text-anchor="middle" class="t">Cosmic Sea Security Workflow</text>
+<rect x="60" y="220" width="270" height="180" fill="#e0f2fe" class="b"/><text x="195" y="270" text-anchor="middle" class="h">1. User Action</text><text x="195" y="310" text-anchor="middle" class="p">Select satellite</text><text x="195" y="345" text-anchor="middle" class="p">Send command / attack</text>
+<rect x="375" y="220" width="270" height="180" fill="#ede9fe" class="b"/><text x="510" y="270" text-anchor="middle" class="h">2. Secure Packet</text><text x="510" y="310" text-anchor="middle" class="p">Evolving encryption</text><text x="510" y="345" text-anchor="middle" class="p">Signature and HMAC</text>
+<rect x="755" y="220" width="270" height="180" fill="#dcfce7" class="b"/><text x="890" y="270" text-anchor="middle" class="h">3. Verification</text><text x="890" y="310" text-anchor="middle" class="p">Identity, nonce, time</text><text x="890" y="345" text-anchor="middle" class="p">Integrity validation</text>
+<rect x="1070" y="220" width="270" height="180" fill="#fef3c7" class="b"/><text x="1205" y="270" text-anchor="middle" class="h">4. AI Defence</text><text x="1205" y="310" text-anchor="middle" class="p">Anomaly and trust score</text><text x="1205" y="345" text-anchor="middle" class="p">Monitor to isolation</text>
+<path d="M330 310 L375 310" class="a"/><path d="M645 310 L755 310" class="a"/><path d="M1025 310 L1070 310" class="a"/>
+<rect x="290" y="475" width="820" height="120" fill="#fee2e2" class="b"/><text x="700" y="520" text-anchor="middle" class="h">Dashboard Results</text><text x="700" y="555" text-anchor="middle" class="p">Packet status, alerts, trust score, incidents,</text><text x="700" y="580" text-anchor="middle" class="p">and defence metrics</text>
+<path d="M1205 400 L1010 490" class="a"/>
+<text x="700" y="650" text-anchor="middle" class="p">Fig. 11: Project Workflow Diagram</text>
+</svg>

@@ -41,6 +41,7 @@ class CosmicSeaSimulator:
         self._lock = threading.Lock()
         self._running = False
         self._thread: threading.Thread | None = None
+        self.presenter_mode = False
 
         self._bootstrap_identities()
 
@@ -83,6 +84,160 @@ class CosmicSeaSimulator:
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=1.0)
 
+    def set_presenter_mode(self, enabled: bool) -> None:
+        with self._lock:
+            self.presenter_mode = enabled
+
+    def run_demo_action(self, action: str, satellite_id: str) -> dict[str, Any]:
+        with self._lock:
+            self.presenter_mode = True
+            if not any(sat.satellite_id == satellite_id for sat in self.satellites):
+                return {"status": "error", "reason": "unknown_satellite"}
+            if self._is_isolated(satellite_id):
+                return {"status": "error", "reason": "satellite_isolated"}
+
+            ground_id = self.active_ground.station_id
+            timestamp = self._clock_time(ground_id)
+            position = self._satellite_position(satellite_id)
+
+            if action == "legitimate_command":
+                packet = self.security.issue_packet(
+                    sender_id=ground_id,
+                    receiver_id=satellite_id,
+                    payload={"type": "command", "cmd": "SYNC_CLOCK", "delta": 1, "source": "presenter_demo"},
+                    satellite_position=self._ground_position(ground_id),
+                    timestamp_override=timestamp,
+                )
+                self._process_packet(packet, declared_payload_type="command")
+                message = f"Authenticated SYNC_CLOCK command accepted by {satellite_id}."
+                explanation = [
+                    "Ground station creates a command packet.",
+                    "Hybrid key derivation, packet authentication, and integrity checks pass.",
+                    f"{satellite_id} remains trusted; no defense response is required.",
+                ]
+            elif action == "replay_attack":
+                packet = self.security.issue_packet(
+                    sender_id=satellite_id,
+                    receiver_id=ground_id,
+                    payload={"type": "telemetry", "battery": 88.0, "temp_c": 21.0, "source": "presenter_demo"},
+                    satellite_position=position,
+                    timestamp_override=self._clock_time(satellite_id),
+                )
+                self._process_packet(packet, declared_payload_type="telemetry")
+                self._process_packet(deepcopy(packet), declared_payload_type="telemetry")
+                self._events.append(Event(level="warning", message=f"Presenter demo: replayed captured packet from {satellite_id}"))
+                message = f"Replay from {satellite_id} rejected: the packet nonce was already used."
+                explanation = [
+                    "A valid telemetry packet is authenticated and its nonce is recorded.",
+                    "The exact same packet is presented again.",
+                    "Replay protection rejects the duplicate and the trust/defense pipeline records the violation.",
+                ]
+            elif action == "tamper_attack":
+                packet = self.security.issue_packet(
+                    sender_id=satellite_id,
+                    receiver_id=ground_id,
+                    payload={"type": "telemetry", "battery": 88.0, "temp_c": 21.0, "source": "presenter_demo"},
+                    satellite_position=position,
+                    timestamp_override=self._clock_time(satellite_id),
+                )
+                packet.ciphertext = ("A" if packet.ciphertext[0] != "A" else "B") + packet.ciphertext[1:]
+                self._process_packet(packet, declared_payload_type="telemetry")
+                self._events.append(Event(level="warning", message=f"Presenter demo: tampered packet from {satellite_id}"))
+                message = f"Tampered telemetry from {satellite_id} rejected by packet authentication."
+                explanation = [
+                    "A legitimate telemetry packet is created and signed.",
+                    "Its ciphertext is changed in transit without updating the signature.",
+                    "Verification fails; the packet is rejected and a security incident is recorded.",
+                ]
+            elif action == "impersonation_attack":
+                packet = self.security.issue_packet(
+                    sender_id=ground_id,
+                    receiver_id=satellite_id,
+                    payload={"type": "command", "cmd": "DISABLE_SAFETY", "source": "presenter_demo"},
+                    satellite_position=self._ground_position(ground_id),
+                    timestamp_override=timestamp,
+                )
+                packet.sender_id = satellite_id
+                self._process_packet(packet, declared_payload_type="command")
+                self._events.append(Event(level="warning", message=f"Presenter demo: impersonation attempt against {satellite_id}"))
+                message = f"Forged ground-station identity rejected; {satellite_id}'s trust score is updated."
+                explanation = [
+                    "An attacker claims to be the selected satellite.",
+                    "The claimed identity does not match the packet's cryptographic signature.",
+                    "The forged command is rejected and autonomous defense updates the incident record.",
+                ]
+            elif action == "anomaly_demo":
+                now = datetime.now(timezone.utc)
+                warmup_count = self.config.ai_warmup_samples
+                for index in range(warmup_count):
+                    sample_time = now - timedelta(seconds=(warmup_count - index) * 0.25 + 3.0)
+                    self.ai.observe(
+                        identity=satellite_id,
+                        role="satellite",
+                        receiver_id=ground_id,
+                        payload_type="telemetry",
+                        battery=90.0,
+                        temp_c=20.0,
+                        timestamp=sample_time.isoformat(),
+                    )
+
+                anomaly = self.security.issue_packet(
+                    sender_id=satellite_id,
+                    receiver_id=ground_id,
+                    payload={"type": "telemetry", "battery": 0.0, "temp_c": 120.0, "source": "presenter_demo"},
+                    satellite_position=position,
+                    timestamp_override=datetime.now(timezone.utc).isoformat(),
+                )
+                self._process_packet(anomaly, declared_payload_type="telemetry")
+                self._events.append(Event(level="warning", message=f"Presenter demo: abnormal telemetry from {satellite_id}"))
+                message = f"AI anomaly analysis completed for {satellite_id}; inspect its risk, trust, and alerts."
+                explanation = [
+                    f"The detector calibrates from {warmup_count} clean baseline samples.",
+                    "An outlier with critically low battery and extreme temperature is evaluated.",
+                    "The anomaly score feeds into trust scoring and autonomous defense policy.",
+                ]
+            elif action == "containment_demo":
+                trust_to_remove = 100.0 - self.config.trust_isolate_threshold
+                minor_penalty_floor = self.config.trust_decay_minor * 1.15
+                required_violations = int(trust_to_remove / minor_penalty_floor)
+                if required_violations * minor_penalty_floor < trust_to_remove:
+                    required_violations += 1
+                packet_count = self.config.satellite_freq_limit + required_violations
+                now = datetime.now(timezone.utc)
+                packets_sent = 0
+                for index in range(packet_count):
+                    sample_time = now - timedelta(seconds=(packet_count - index) * 0.25)
+                    packet = self.security.issue_packet(
+                        sender_id=satellite_id,
+                        receiver_id=ground_id,
+                        payload={"type": "telemetry", "battery": 90.0, "temp_c": 20.0, "source": "presenter_rate_demo"},
+                        satellite_position=position,
+                        timestamp_override=sample_time.isoformat(),
+                    )
+                    self._process_packet(packet, declared_payload_type="telemetry")
+                    packets_sent += 1
+                    if self._is_isolated(satellite_id):
+                        break
+
+                if not self._is_isolated(satellite_id):
+                    return {"status": "error", "reason": "containment_threshold_not_reached"}
+                self._events.append(Event(level="critical", message=f"Presenter demo: {satellite_id} isolated after sustained rate abuse"))
+                message = f"{satellite_id} isolated and its cryptographic identity revoked after sustained rate abuse."
+                explanation = [
+                    f"{packets_sent} authenticated telemetry packets exceed the configured frequency baseline.",
+                    "Trust policy escalates through monitor, throttle, and quarantine.",
+                    "Autonomous defense isolates the satellite, blocks further traffic, and revokes its identity.",
+                ]
+            else:
+                return {"status": "error", "reason": "unknown_action"}
+
+            return {
+                "status": "ok",
+                "action": action,
+                "message": message,
+                "explanation": explanation,
+            }
+
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
             trust_data = self.trust.snapshot()
@@ -101,6 +256,7 @@ class CosmicSeaSimulator:
             return {
                 "time": datetime.now(timezone.utc).isoformat(),
                 "mode": "simulation" if self.auto_simulation else "external_ingest",
+                "presenter_mode": self.presenter_mode,
                 "crypto_mode": "hybrid-ecc-aes256gcm-orbit-aware",
                 "active_ground_station": self.active_ground.station_id,
                 "ground_stations": [gs.station_id for gs in self.ground_stations],
@@ -157,6 +313,8 @@ class CosmicSeaSimulator:
 
     def _simulate_tick(self) -> None:
         with self._lock:
+            if self.presenter_mode:
+                return
             self._tick += 1
             self._maybe_handover_ground_station()
             self._advance_orbits()

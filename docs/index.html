@@ -308,6 +308,76 @@
         display: block;
       }
 
+      .status-banner.error {
+        border-color: rgba(255, 100, 110, 0.4);
+        background: rgba(45, 12, 20, 0.75);
+        color: #ffd8da;
+      }
+
+      .demo-panel {
+        margin-bottom: 14px;
+      }
+
+      .demo-intro, .demo-feedback {
+        color: var(--text-dim);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .demo-controls, .demo-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .demo-controls label {
+        align-self: center;
+        color: var(--text-dim);
+        font-size: 12px;
+      }
+
+      .demo-controls select, .demo-controls button, .demo-actions button {
+        border: 1px solid var(--panel-border);
+        border-radius: 9px;
+        padding: 10px 12px;
+        background: rgba(6, 18, 31, 0.92);
+        color: var(--text-main);
+        font: inherit;
+      }
+
+      .demo-controls button, .demo-actions button {
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .demo-controls button {
+        background: linear-gradient(160deg, rgba(18, 70, 110, 0.95), rgba(12, 37, 66, 0.95));
+      }
+
+      .demo-actions button:hover:not(:disabled), .demo-controls button:hover {
+        border-color: var(--cyan);
+      }
+
+      .demo-actions button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+
+      .demo-feedback {
+        margin-top: 14px;
+        color: var(--text-main);
+        font-weight: 700;
+      }
+
+      .demo-steps {
+        margin: 6px 0 0;
+        padding-left: 20px;
+        color: var(--text-dim);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
       @keyframes pulse {
         0%, 100% { box-shadow: 0 0 0 rgba(89, 206, 255, 0.0); }
         50% { box-shadow: 0 0 22px rgba(89, 206, 255, 0.35); }
@@ -352,6 +422,31 @@
 
       <div class="status-banner" id="status-banner"></div>
 
+      <section class="panel demo-panel" aria-labelledby="demo-title">
+        <div class="panel-title" id="demo-title">Presenter-controlled showcase</div>
+        <div class="demo-intro">Start with a clean network, choose a satellite, then demonstrate trusted traffic, replay and tampering defenses, identity verification, AI anomaly response, and staged containment. These controls operate only on the simulator.</div>
+        <div class="demo-controls">
+          <button id="demo-reset" type="button">Start / Reset Demo</button>
+          <label for="demo-satellite">Target satellite</label>
+          <select id="demo-satellite" aria-label="Target satellite">
+            <option value="SAT-01">SAT-01</option>
+          </select>
+        </div>
+        <div class="demo-actions">
+          <button type="button" data-demo-action="legitimate_command" disabled>Send trusted command</button>
+          <button type="button" data-demo-action="replay_attack" disabled>Demonstrate replay defense</button>
+          <button type="button" data-demo-action="tamper_attack" disabled>Demonstrate tamper defense</button>
+          <button type="button" data-demo-action="impersonation_attack" disabled>Demonstrate impersonation defense</button>
+          <button type="button" data-demo-action="anomaly_demo" disabled>Demonstrate AI anomaly</button>
+          <button type="button" data-demo-action="containment_demo" disabled>Escalate to full containment</button>
+        </div>
+        <div class="demo-feedback" id="demo-feedback" aria-live="polite">Connect to the backend, then start or reset the demo for a clean, presenter-controlled session.</div>
+        <ol class="demo-steps" id="demo-steps">
+          <li>Packets pass through the project's real cryptographic verification and trust pipeline.</li>
+          <li>Rejected traffic creates incidents that feed the autonomous defense dashboard.</li>
+        </ol>
+      </section>
+
       <section class="layout">
         <div class="column">
           <div class="panel">
@@ -388,6 +483,8 @@
       const API_STORAGE_KEY = 'cosmic-api-base';
       let fallbackTimer = null;
       let stream = null;
+      let currentState = null;
+      let demoActionPending = false;
 
       function getApiBase() {
         const params = new URLSearchParams(window.location.search);
@@ -409,7 +506,7 @@
       function showStatus(message, isError = false) {
         const banner = document.getElementById('status-banner');
         banner.textContent = message;
-        banner.className = `status-banner show${isError ? '' : ''}`;
+        banner.className = `status-banner show${isError ? ' error' : ''}`;
       }
 
       function fmt(value, digits = 2) {
@@ -419,13 +516,21 @@
 
       function renderState(state) {
         if (!state) return;
+        currentState = state;
 
         document.getElementById('timestamp').textContent =
-          `Mode: ${state.mode || 'simulation'} | Crypto: ${state.crypto_mode || 'hybrid'} | Active GS: ${state.active_ground_station} | Stations: ${state.ground_stations.join(', ')} | UTC: ${state.time}`;
+          `Mode: ${state.mode || 'simulation'} | ${state.presenter_mode ? 'Presenter-controlled' : 'Automatic simulation'} | Crypto: ${state.crypto_mode || 'hybrid'} | Active GS: ${state.active_ground_station} | Stations: ${state.ground_stations.join(', ')} | UTC: ${state.time}`;
 
         const satGrid = document.getElementById('satellite-grid');
         satGrid.innerHTML = '';
+        const selector = document.getElementById('demo-satellite');
+        const selectedSatellite = selector.value;
+        selector.replaceChildren();
         (state.satellites || []).forEach((sat) => {
+          const option = document.createElement('option');
+          option.value = sat.id;
+          option.textContent = sat.id;
+          selector.appendChild(option);
           const stage = String(sat.stage || 'healthy').toLowerCase();
           const trust = Math.max(0, Math.min(100, Number(sat.trust || 0)));
 
@@ -441,6 +546,10 @@
           `;
           satGrid.appendChild(card);
         });
+        if ((state.satellites || []).some((sat) => sat.id === selectedSatellite)) {
+          selector.value = selectedSatellite;
+        }
+        updateDemoButtons();
 
         const kpi = state.defense_kpis || {};
         const kpiItems = [
@@ -504,6 +613,74 @@
         }
       }
 
+      function updateDemoButtons() {
+        const satellites = (currentState && currentState.satellites) || [];
+        const selected = satellites.find((sat) => sat.id === document.getElementById('demo-satellite').value);
+        const unavailable = !currentState || !currentState.presenter_mode || !selected || selected.isolated || demoActionPending;
+        document.querySelectorAll('[data-demo-action]').forEach((button) => {
+          button.disabled = unavailable;
+        });
+      }
+
+      function showDemoResult(result) {
+        document.getElementById('demo-feedback').textContent = result.message || result.reason || 'Demo action completed.';
+        const steps = document.getElementById('demo-steps');
+        steps.replaceChildren();
+        (result.explanation || []).forEach((text) => {
+          const step = document.createElement('li');
+          step.textContent = text;
+          steps.appendChild(step);
+        });
+      }
+
+      async function resetDemo() {
+        const apiBase = getApiBase();
+        const button = document.getElementById('demo-reset');
+        button.disabled = true;
+        try {
+          if (!apiBase) throw new Error('Connect to the backend first.');
+          const response = await fetch(`${apiBase}/api/demo/reset`, { method: 'POST' });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.reason || `HTTP ${response.status}`);
+          renderState(result.state);
+          showDemoResult({ message: result.message, explanation: [
+            'The network has been reinitialized with fresh satellite identities and trust scores.',
+            'Automatic simulation is paused so each event happens when you choose it.',
+            'Select a scenario above to demonstrate packet security and autonomous defense.',
+          ] });
+        } catch (error) {
+          document.getElementById('demo-feedback').textContent = `Could not start demo: ${error.message}`;
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      async function runDemoAction(button) {
+        const apiBase = getApiBase();
+        demoActionPending = true;
+        updateDemoButtons();
+        try {
+          if (!apiBase) throw new Error('Connect to the backend first.');
+          const response = await fetch(`${apiBase}/api/demo/action`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: button.dataset.demoAction,
+              satellite_id: document.getElementById('demo-satellite').value,
+            }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.reason || `HTTP ${response.status}`);
+          renderState(result.state);
+          showDemoResult(result);
+        } catch (error) {
+          document.getElementById('demo-feedback').textContent = `Demo action failed: ${error.message}`;
+        } finally {
+          demoActionPending = false;
+          updateDemoButtons();
+        }
+      }
+
       async function pollFallback(apiBase) {
         if (!apiBase) {
           showStatus('Set the backend URL first. For a local demo, point this page to your tunneled Flask API.', true);
@@ -561,6 +738,11 @@
       }
 
       document.getElementById('save-api-base').addEventListener('click', connect);
+      document.getElementById('demo-reset').addEventListener('click', resetDemo);
+      document.getElementById('demo-satellite').addEventListener('change', updateDemoButtons);
+      document.querySelectorAll('[data-demo-action]').forEach((button) => {
+        button.addEventListener('click', () => runDemoAction(button));
+      });
       document.getElementById('clear-api-base').addEventListener('click', () => {
         document.getElementById('api-base-input').value = '';
         setApiBase('');

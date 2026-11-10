@@ -45,6 +45,41 @@ def state():
     return jsonify(sim.snapshot())
 
 
+def _reset_demo_simulator() -> None:
+    global sim
+    satellite_count = len(sim.satellites)
+    sim.stop()
+    sim = CosmicSeaSimulator(
+        num_satellites=satellite_count,
+        tick_interval=1.0,
+        auto_simulation=SIM_MODE,
+    )
+    sim.set_presenter_mode(True)
+    sim.start()
+
+
+@app.route("/api/demo/reset", methods=["POST"])
+def reset_demo():
+    _reset_demo_simulator()
+    return jsonify({"status": "ok", "message": "Fresh presenter demo is ready.", "state": sim.snapshot()})
+
+
+@app.route("/api/demo/action", methods=["POST"])
+def demo_action():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"status": "error", "reason": "invalid_json"}), 400
+
+    action = data.get("action")
+    satellite_id = data.get("satellite_id")
+    if not isinstance(action, str) or not isinstance(satellite_id, str):
+        return jsonify({"status": "error", "reason": "missing_fields"}), 400
+
+    result = sim.run_demo_action(action=action, satellite_id=satellite_id)
+    code = 200 if result.get("status") == "ok" else 400
+    return jsonify({**result, "state": sim.snapshot()}), code
+
+
 @app.route("/api/stream")
 def stream() -> Response:
     def event_stream():

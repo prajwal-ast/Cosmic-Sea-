@@ -118,6 +118,13 @@ python app.py
 
 Open `http://127.0.0.1:5000`.
 
+## Presenter-Controlled Demo
+- Open the local dashboard and select **Start / Reset Demo** for a fresh network with automatic simulation paused.
+- Select a satellite and run the trusted-command, replay, tampering, impersonation, AI-anomaly, or staged-containment scenarios.
+- Each scenario reports the verification flow in the dashboard and updates the real trust, alert, incident, and defense KPI state.
+- The GitHub Pages dashboard exposes the same controls after connecting its backend target.
+- Demo controls are available through `POST /api/demo/reset` and `POST /api/demo/action`; they only operate on the simulator.
+
 ## Free Demo Deployment (Recommended)
 ### 1) Host the dashboard on GitHub Pages
 - This repo now includes a static dashboard in `docs/index.html`.

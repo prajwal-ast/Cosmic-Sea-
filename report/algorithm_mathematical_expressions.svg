@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1550" viewBox="0 0 1600 1550">
+  <rect width="1600" height="1550" fill="white"/>
+  <style>
+    .title { font: bold 42px Arial, sans-serif; fill: #14213d; }
+    .heading { font: bold 27px Arial, sans-serif; fill: #1d3557; }
+    .eq { font: 31px 'Cambria Math', 'Times New Roman', serif; fill: #111827; }
+    .note { font: 21px Arial, sans-serif; fill: #4b5563; }
+    .box { fill: #f8fafc; stroke: #93c5fd; stroke-width: 2; rx: 14; }
+  </style>
+  <text x="800" y="75" text-anchor="middle" class="title">Algorithm and Mathematical Expressions</text>
+
+  <rect x="75" y="115" width="1450" height="190" class="box"/>
+  <text x="110" y="165" class="heading">1. Shared-Secret and Evolving Key Derivation</text>
+  <text x="160" y="220" class="eq">S = X25519(SKₛₑₙdₑᵣ, PKᵣₑcₑᵢᵥₑᵣ)      E = X25519(EphSKₛₑₙdₑᵣ, PKᵣₑcₑᵢᵥₑᵣ)</text>
+  <text x="160" y="270" class="eq">R = HMAC-SHA256(S, epoch)      K = HKDF-SHA256(E || S, salt = R, info)</text>
+
+  <rect x="75" y="335" width="1450" height="155" class="box"/>
+  <text x="110" y="385" class="heading">2. AES-256-GCM Encryption and HMAC Integrity Check</text>
+  <text x="160" y="440" class="eq">C = AES-GCM_Encrypt(K_AES, P, N)      H = HMAC-SHA256(K_HMAC, M)</text>
+
+  <rect x="75" y="520" width="1450" height="145" class="box"/>
+  <text x="110" y="570" class="heading">3. Replay-Protection Timestamp Validation</text>
+  <text x="160" y="625" class="eq">|T_current − T_packet| ≤ 8 seconds</text>
+
+  <rect x="75" y="695" width="1450" height="250" class="box"/>
+  <text x="110" y="745" class="heading">4. AI Anomaly Detection</text>
+  <text x="160" y="800" class="eq">zᵢ = |(xᵢ − μᵢ) / σᵢ|      Score = (Σ zᵢ) / n</text>
+  <text x="160" y="860" class="eq">Confidence = 1 / (1 + e^(−1.35(Score − 2.4)))</text>
+  <text x="160" y="910" class="note">An anomaly is reported when Confidence ≥ 0.72.</text>
+
+  <rect x="75" y="975" width="1450" height="250" class="box"/>
+  <text x="110" y="1025" class="heading">5. Dynamic Trust-Score Update</text>
+  <text x="160" y="1080" class="eq">Trust_new = max(0, Trust_old − Δ)</text>
+  <text x="160" y="1135" class="eq">Δ = BaseDecay × RoleWeight × SeverityWeight × (0.6 + Confidence)</text>
+  <text x="160" y="1190" class="eq">Valid packet:  Trust_new = min(100, Trust_old + 0.4)</text>
+
+  <rect x="75" y="1255" width="1450" height="190" class="box"/>
+  <text x="110" y="1305" class="heading">6. Trust-Stage Thresholds</text>
+  <text x="160" y="1360" class="eq">Healthy &gt; 80     |     Monitor ≤ 80     |     Throttle ≤ 65</text>
+  <text x="160" y="1410" class="eq">Quarantine ≤ 50     |     Isolated ≤ 35</text>
+  <text x="800" y="1505" text-anchor="middle" class="note">Fig. 9: Mathematical Expressions Used in Cosmic Sea</text>
+</svg>

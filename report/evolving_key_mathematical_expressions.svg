@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1720" viewBox="0 0 1800 1720">
+  <rect width="1800" height="1720" fill="white"/>
+  <style>
+    .title { font: bold 44px Arial, sans-serif; fill: #14213d; }
+    .heading { font: bold 28px Arial, sans-serif; fill: #1d3557; }
+    .eq { font: 30px 'Cambria Math', 'Times New Roman', serif; fill: #111827; }
+    .note { font: 21px Arial, sans-serif; fill: #4b5563; }
+    .box { fill: #f8fafc; stroke: #60a5fa; stroke-width: 2; rx: 14; }
+  </style>
+
+  <text x="900" y="70" text-anchor="middle" class="title">Evolving Encryption and Mathematical Expressions</text>
+
+  <rect x="70" y="110" width="1660" height="210" class="box"/>
+  <text x="110" y="160" class="heading">1. Static and Ephemeral Shared-Secret Generation</text>
+  <text x="150" y="220" class="eq">S = X25519(SK_sender, PK_receiver)</text>
+  <text x="150" y="275" class="eq">E = X25519(EphSK_sender, PK_receiver)</text>
+
+  <rect x="70" y="350" width="1660" height="280" class="box"/>
+  <text x="110" y="400" class="heading">2. Evolving Key Derivation</text>
+  <text x="150" y="460" class="eq">R = HMAC-SHA256(S, epoch)</text>
+  <text x="150" y="520" class="eq">Info = epoch || packetID || timestamp || satellitePosition</text>
+  <text x="150" y="580" class="eq">K = HKDF-SHA256(E || S, salt = R, info = Info)</text>
+  <text x="150" y="615" class="note">K is split into the AES-256 encryption key (K_AES) and HMAC integrity key (K_HMAC).</text>
+
+  <rect x="70" y="660" width="1660" height="160" class="box"/>
+  <text x="110" y="710" class="heading">3. AES-256-GCM Encryption and HMAC Integrity Check</text>
+  <text x="150" y="770" class="eq">C = AES-GCM_Encrypt(K_AES, P, N)      H = HMAC-SHA256(K_HMAC, M)</text>
+
+  <rect x="70" y="850" width="1660" height="145" class="box"/>
+  <text x="110" y="900" class="heading">4. Replay-Protection Timestamp Validation</text>
+  <text x="150" y="955" class="eq">|T_current − T_packet| ≤ 8 seconds</text>
+
+  <rect x="70" y="1025" width="1660" height="255" class="box"/>
+  <text x="110" y="1075" class="heading">5. AI Anomaly Detection</text>
+  <text x="150" y="1135" class="eq">z_i = |(x_i − μ_i) / σ_i|      Score = (Σ z_i) / n</text>
+  <text x="150" y="1195" class="eq">Confidence = 1 / (1 + e^(−1.35(Score − 2.4)))</text>
+  <text x="150" y="1240" class="note">An anomaly is reported when Confidence ≥ 0.72.</text>
+
+  <rect x="70" y="1310" width="1660" height="240" class="box"/>
+  <text x="110" y="1360" class="heading">6. Dynamic Trust-Score Update</text>
+  <text x="150" y="1420" class="eq">Trust_new = max(0, Trust_old − Δ)</text>
+  <text x="150" y="1475" class="eq">Δ = BaseDecay × RoleWeight × SeverityWeight × (0.6 + Confidence)</text>
+  <text x="150" y="1525" class="eq">Valid packet: Trust_new = min(100, Trust_old + 0.4)</text>
+
+  <text x="900" y="1655" text-anchor="middle" class="note">Fig. 9: Evolving Encryption and Mathematical Expressions Used in Cosmic Sea</text>
+</svg>
